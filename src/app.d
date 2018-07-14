@@ -156,6 +156,11 @@ struct Istaka
 				renkBalyası.Çıkar(taş);
 			dönüşDeğeri ~= renkBalyası; 
 		}
+		else if ( renkBalyası.taşlar.length == 3 &&  taşlar.count(taş) > 1 &&  sayıBalyası )
+		{
+			dönüşDeğeri ~= sayıBalyası;
+			dönüşDeğeri ~= renkBalyası; 
+		}
 		else	
 		{
 			Balya*[] geçiciDönüşDeğeriRenk = BalyaOluşturmaYardımcısı(renkBalyası, taşlar);
