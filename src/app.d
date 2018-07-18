@@ -14,13 +14,36 @@ enum TaşRengi
 	Siyah
 }
 
+TaşRengi DizgedenRenkDön( string dizgeParametre)
+{
+	string dizge = dizgeParametre.toLower();
+	if ( dizge ==  "sarı" || dizge == "sa" || dizge == "sari" )
+		return TaşRengi.Sarı;
+	else if ( dizge ==  "kırmızı" || dizge == "k" || dizge == "kirmizi" )
+		return TaşRengi.Kırmızı;
+	else if ( dizge ==  "mavi" || dizge == "m" )
+		return TaşRengi.Mavi;
+	else if ( dizge ==  "siyah" || dizge == "s" )
+		return TaşRengi.Siyah;
+	else 
+		throw new StringException(" Yanlış renk girişi ");
+}
+
+enum Durumlar 
+{
+	OyunBitti,
+	Devam,
+	TaşÇek,
+	TaşAt
+}
+
 struct OkeyTaşı 
 {
 	TaşRengi renk;
 	int      sayı;	
 	bool     ok;
 	
-	bool opEquals( ref OkeyTaşı diğer )
+	bool opEquals( OkeyTaşı diğer )
 	{
 		return diğer.renk == this.renk && diğer.sayı == this.sayı && diğer.ok == this.ok;
 	}
@@ -74,6 +97,66 @@ struct OkeyTaşı
 	}
 }
 
+OkeyTaşı DizgedenTaşOluştur( string dizge )
+{
+	string[] ikilisi = stdin.readln.strip.chomp.split(",").array();
+	if (ikilisi.length != 2 && ikilisi.length != 3)
+	{
+		writeln(" Geçersiz giriş bir daha giriniz");
+		throw new StringException(" Yanlış giriş ");
+	}
+	
+	if ( ikilisi.length == 2) 
+		return OkeyTaşı(DizgedenRenkDön(ikilisi[0]), ikilisi[1].to!int, false);	
+	else if ( ikilisi[2].toLower() == "ok" || ikilisi[2].toLower() == "okey")
+		return OkeyTaşı(DizgedenRenkDön(ikilisi[0]), ikilisi[1].to!int, true);	
+	else 
+	{
+		writeln(" Geçersiz giriş bir daha giriniz");
+		throw new StringException(" Yanlış giriş ");
+	}
+}
+OkeyTaşı KonsoledanTaşOluştur(  )
+{
+	while(true)
+	{
+		try 
+		{
+			return DizgedenTaşOluştur(stdin.readln.strip.chomp());
+		}
+		catch (StringException e)
+		{
+			writeln(" Hatalı giriş  bir daha giriniz");
+			continue; 
+		}
+
+	}	
+}
+
+OkeyTaşı[] KonsoledanTaşDizisiOluştur(  )
+{
+	OkeyTaşı[] dönüşDeğeri; 
+	try 
+	{
+		string[] taşlar = stdin.readln.strip.chomp.split(";").array();
+		if ( taşlar.empty )
+		{
+			writeln("DüşenTaşlar girilmedi");
+			return dönüşDeğeri;
+		}
+		else 
+		{
+			return taşlar.map!( a=> DizgedenTaşOluştur(a) ).array;
+		}
+					
+	}
+	catch (StringException e)
+	{
+		writeln(" Hatalı giriş  bir daha giriniz");
+		return dönüşDeğeri; 
+	}	
+}
+
 struct Balya
 {
 	bool opCmp( ref Balya diğer )
@@ -104,14 +187,111 @@ Balya* BalyaOluştur( OkeyTaşı[] taşlar, bool isRenk )
 
 struct Istaka 
 {
+	this( this r)
+	{
+		düşenTaşlar = r.düşenTaşlar.dup;
+		bütünTaşlarım = r.bütünTaşlarım.dup;
+		foreach ( per; r.balyalarım )
+		{
+			Balya* yeniBalya = new Balya( per.isRenk, per.taşlar.dup);
+			balyalarım ~= yeniBalya;
+		}	
+
+	}
+	
+	void KonsoledanOyna()
+	{
+		if ( bütünTaşlarım.length > 15 )
+		{
+			writeln(" Taş eklemeye izin verilmedi çünkü 15'den fazla taş olamaz " );
+		}
+		else if( bütünTaşlarım.length == 15 )
+		{
+			writeln( "Perleriniz: ", BalyaDizgesiniDön());
+			
+			OkeyTaşı atılacakTaş;
+			if (TaşAt(atılacakTaş) == Durumlar.OyunBitti )
+				writeln( "!!!!!!!!!!!!!!!Kazandık ortaya!!!!!!!!!!!!!!!!!!!!", atılacakTaş, " at" );
+			else 
+				writeln( "Lütfen ", atılacakTaş, " yere at" );
+		} 
+		else if ( bütünTaşlarım.length == 14 )
+		{
+			writeln("İsterseniz Düşen taşları yazın(kendi attığınız hariç) istemezseniz enter'a basın ");
+			KonsoledanTaşDizisiOluştur().each!( a=> YereAtılanTaşEkle(a));
+			writeln("Lütfen yerdeki taşı yazınız");
+			OkeyTaşı yenitaş = KonsoledanTaşOluştur();
+			Başla();
+			if (YerdenEkle(yenitaş) == Durumlar.TaşÇek)
+			{
+				writeln("Lütfen ortadan taş çekin ve programa yazın" );
+				yenitaş = KonsoledanTaşOluştur();
+				OrtadanEkle(yenitaş);
+			}	
+			KonsoledanOyna();	
+		}
+		else 
+		{
+			writeln("14 'den daha az taşınız var lütfen taşlarınızı giriniz");
+			OkeyTaşı yenitaş = KonsoledanTaşOluştur();
+			Ekle(yenitaş);
+		}
+	}
+	
 	void Ekle( OkeyTaşı taş )
 	{
+		if ( bütünTaşlarım.length > 15 )
+		{
+			writeln(" Taş eklemeye izin verilmedi çünkü 15'den fazla taş olamaz " );
+		}
 		bütünTaşlarım ~= taş;
+	}
+	
+	void YereAtılanTaşEkle( OkeyTaşı taş ) 
+	{
+		düşenTaşlar ~= taş;
+		if ( düşenTaşlar.length >= 49 )
+		{
+			düşenTaşlar.length = 0;
+			writeln(" Yerdeki taşlar bitti bir daha dağatılacak ");
+		}
+			
+	}
+	
+	Durumlar TaşAt( out OkeyTaşı taş)  
+	{ 
+		Durumlar dönüşDeğeri = TaşAtUygulama(taş);
+		bütünTaşlarım = bütünTaşlarım.remove( bütünTaşlarım.countUntil(taş) );
+		YereAtılanTaşEkle(taş);
+		return  dönüşDeğeri;
+	}
+	
+	Durumlar YerdenEkle( OkeyTaşı yeniTaş )
+	{
+		OkeyTaşı[] şimdikibalyaTaşları = balyalarım.map!( a => a.taşlar).joiner().array.sort().array;
+		Istaka* geçiciIstaka = new Istaka(this);
+		geçiciIstaka.OrtadanEkle(yeniTaş);
+		OkeyTaşı[] yeniBalyaTaşları = geçiciIstaka.balyalarım.map!( a => a.taşlar).joiner().array.sort().array;
+		if ( yeniBalyaTaşları.length > şimdikibalyaTaşları.length) 
+		{
+			return OrtadanEkle(yeniTaş);
+		} 
+		return Durumlar.TaşÇek;
+	}
+
+
+	Durumlar OrtadanEkle( OkeyTaşı yeniTaş )
+	{
+		bütünTaşlarım ~= yeniTaş;
+		Başla();
+
+		return Durumlar.TaşAt;
 	}
 	
 	void Başla()
 	{
 		OkeyTaşı[] istenilenTaşlar = IstenilenTaşlarıAyıkla(bütünTaşlarım);
+		balyalarım.length = 0;
 		while ( true )
 		{
 			Balya*[] dönüşDeğeri;
@@ -138,6 +318,7 @@ struct Istaka
 		}
 			
 	}
+
 
 	void BalyalarıOluştur( OkeyTaşı taş, OkeyTaşı[] taşlar, ref Balya*[] dönüşDeğeri )
 	{
@@ -186,6 +367,68 @@ struct Istaka
 		return geçiciDönüşDeğeri;	
 	}
 	
+	
+	Durumlar TaşAtUygulama( out OkeyTaşı taş)  
+	{ 
+		if ( bütünTaşlarım.length != 15 )
+		{
+			writeln(" Taş atarken 15 tane taş olması lazım sorun var " );
+		}
+		
+		auto istenmeyenTaşlar = İşeYaramayanTaşlarıBul(bütünTaşlarım);
+		if ( !istenmeyenTaşlar.empty ) 
+		{
+			taş = istenmeyenTaşlar.front;
+			return Durumlar.Devam;
+		}
+		else 
+		{
+			OkeyTaşı[] balyaTaşları = balyalarım.map!( a => a.taşlar).joiner().array.sort().array;
+			OkeyTaşı[] balyaHariciTaşlar = bütünTaşlarım.sort().setDifference( balyaTaşları ).array;
+			if (  balyaHariciTaşlar.length == 1 )
+			{
+				taş = balyaHariciTaşlar.front;
+				return Durumlar.OyunBitti;
+			}
+			else if (balyaHariciTaşlar.empty )
+			{
+				auto üçtenBüyükBalyalar = balyalarım.filter!( a => a.taşlar.length > 3 );
+				if ( üçtenBüyükBalyalar.empty() )
+				{
+					writeln("Beş tane üçlü balya iğrenç durum Erdem daha güzel bir çözüm üret ");
+					taş = balyaHariciTaşlar.front;
+					return Durumlar.Devam;
+				}
+				else 
+				{
+					taş = üçtenBüyükBalyalar.front().taşlar.front();
+					return Durumlar.OyunBitti;
+				}
+			}
+			else 
+			{
+				OkeyTaşı[] elenenTaşlar = chain(bütünTaşlarım, düşenTaşlar).array;
+				double enDüşükİhtimal = double.max;
+				OkeyTaşı atılacakTaş;
+				foreach( kalanTaş;  balyaHariciTaşlar)
+				{
+					double şuankiİhtimal = TaşTamamlamaİhtimaliniHesapla(kalanTaş, bütünTaşlarım);
+					if ( approxEqual(şuankiİhtimal, enDüşükİhtimal) )
+					{
+						if (AynıRenktenDiziAralığı(kalanTaş, bütünTaşlarım).length < 
+							AynıRenktenDiziAralığı(atılacakTaş, bütünTaşlarım).length)
+							continue;
+					}
+					enDüşükİhtimal = şuankiİhtimal;
+					atılacakTaş = kalanTaş;
+				}
+				taş = atılacakTaş;
+				return Durumlar.Devam;	
+			}
+		}	
+	}
+	
+	
 	void BalyalarıYazdır()
 	{
 		writeln(BalyaDizgesiniDön());	
@@ -196,9 +439,69 @@ struct Istaka
 		return balyalarım.map!( a=> a.Yazdır()).joiner("***").array.to!string;
 	}
 	
+	OkeyTaşı[] düşenTaşlar;
 	Balya*[]   balyalarım;
 	OkeyTaşı[] bütünTaşlarım;
 }
+
+double TaşTamamlamaİhtimaliniHesapla( OkeyTaşı taş, OkeyTaşı[] elenenTaşlar )
+{
+	OkeyTaşı[] tamamlayanTaşlar = TaşTamamla( taş, elenenTaşlar);
+	return tamamlayanTaşlar.map!( a=> IhtimalHesapla( a, elenenTaşlar) ).sum();
+}
+
+double IhtimalHesapla( OkeyTaşı taş, OkeyTaşı[] elenenTaşlar )
+{
+	ulong kaçTaneAtıldı = elenenTaşlar.count!( a=> a == taş );
+	if ( kaçTaneAtıldı > 2 )
+		writeln("Aynı taştan üç tane atılmış olamaz");
+	ulong ortadaKalanlar = 2 - kaçTaneAtıldı;
+	ulong geriyeKalanTaşlar = 106 -  elenenTaşlar.length;
+	return to!double(ortadaKalanlar) / to!double(geriyeKalanTaşlar);
+}
+
+OkeyTaşı[] TaşTamamla( OkeyTaşı taşım, OkeyTaşı[] bütünTaşlarım  )
+{
+	return chain( RenkTamamla( taşım, bütünTaşlarım), SayıTamamlayıcılar( taşım, bütünTaşlarım) ).uniq.array;
+}
+
+OkeyTaşı[] RenkTamamla( OkeyTaşı taşım, OkeyTaşı[] bütünTaşlarım )
+{
+	TaşRengi[] aynıSayıdanBaşkaRenkler = AynıSayıdanBaşkaRenkAralığı( taşım, bütünTaşlarım ).map!( a => a.renk ).array;
+	OkeyTaşı[]  beklenenTaşlar;
+	if ( aynıSayıdanBaşkaRenkler.length != 2 )
+		return beklenenTaşlar;
+		
+	 beklenenTaşlar = [TaşRengi.Sarı, TaşRengi.Kırmızı, TaşRengi.Mavi, TaşRengi.Siyah]
+													.filter!( a=> !aynıSayıdanBaşkaRenkler.canFind(a) )
+	                                                .map!( a => OkeyTaşı(a, taşım.sayı, false)).array;
+	return beklenenTaşlar;
+}
+
+OkeyTaşı[] SayıTamamlayıcılar( OkeyTaşı taşım, OkeyTaşı[] bütünTaşlarım )
+{
+	OkeyTaşı[] aynıRenktenDiziler = AynıRenktenDiziAralığı( taşım, bütünTaşlarım).sort().array;
+	OkeyTaşı[]  boşDizi;
+	if ( aynıRenktenDiziler  == null && aynıRenktenDiziler.length < 2 )
+		return boşDizi;
+		
+	OkeyTaşı[] dönüşDeğeri; 
+	if ( aynıRenktenDiziler.front().sayı != 1 ) 
+	{
+		OkeyTaşı öneEk = aynıRenktenDiziler.front();
+		öneEk.sayı--;
+		dönüşDeğeri ~= öneEk;
+	}
+	
+	if ( aynıRenktenDiziler.back().sayı != 13 ) 
+	{
+		OkeyTaşı sonaEk = aynıRenktenDiziler.back();
+		sonaEk.sayı++;
+		dönüşDeğeri ~= sonaEk;
+	}
+	return 	dönüşDeğeri;
+}
+
 
 ulong AynıSayıdanBaşkaRenkteSayısı( OkeyTaşı taşım, OkeyTaşı[] bütünTaşlarım )
 {
@@ -209,6 +512,7 @@ OkeyTaşı[] AynıSayıdanBaşkaRenkAralığı( OkeyTaşı taşım, OkeyTaşı[]
 {
 	auto dönüşDizisi = bütünTaşlarım.filter!( a => a.renk != taşım.renk && a.sayı == taşım.sayı ).array;
 	dönüşDizisi ~= taşım;
+	dönüşDizisi = dönüşDizisi.uniq.array;
 	return dönüşDizisi; 
 }
 
@@ -246,6 +550,9 @@ OkeyTaşı[] İşeYaramayanTaşlarıBul( OkeyTaşı[] bütünTaşlarım  )
 	bool GenelİşeYaramazTesti( OkeyTaşı taşım, int index , OkeyTaşı[] taşlarım )
 	{
 		ulong taşSayısı = taşlarım.filter!( a => a == taşım ).array.length;
+		
+		if ( taşım.ok )
+			return false;
 		if ( taşSayısı < 2 )
 		{
 			return AynıSayıdanBaşkaRenkteSayısı(taşım, taşlarım) == 0 && 
@@ -292,8 +599,12 @@ OkeyTaşı[] IstenilenTaşlarıAyıkla( OkeyTaşı[] taşlarım )
 
 void main() {
 	
-	OkeyTaşı[] taşlarım;
-	
+	Istaka ıstaka;
+	while ( true )
+	{
+		ıstaka.KonsoledanOyna();
+	}
+
 }
 
 
@@ -500,4 +811,228 @@ unittest
 }
 
 
+unittest
+{
+	//Tamamlayıcı testleri 
+	OkeyTaşı[] doğanınTaşları;
+	doğanınTaşları ~=  OkeyTaşı(TaşRengi.Siyah, 2, false);
+	doğanınTaşları ~=  OkeyTaşı(TaşRengi.Siyah, 3, false);
+	
+	auto tamamlanacakSayılar = SayıTamamlayıcılar(OkeyTaşı(TaşRengi.Siyah, 2, false), doğanınTaşları);
+	assert( tamamlanacakSayılar.equal( [OkeyTaşı(TaşRengi.Siyah, 1, false), 
+										OkeyTaşı(TaşRengi.Siyah, 4, false)]));	
+	
+	OkeyTaşı[] boşDizi;
+	tamamlanacakSayılar = RenkTamamla(OkeyTaşı(TaşRengi.Siyah, 2, false), doğanınTaşları);
+	assert( tamamlanacakSayılar.equal( boşDizi ));	
+	
+	tamamlanacakSayılar = SayıTamamlayıcılar(OkeyTaşı(TaşRengi.Siyah, 6, false), doğanınTaşları);
+
+
+	doğanınTaşları ~=  OkeyTaşı(TaşRengi.Sarı, 3, false);
+	
+	tamamlanacakSayılar = TaşTamamla(OkeyTaşı(TaşRengi.Siyah, 3, false), doğanınTaşları);
+	assert( tamamlanacakSayılar.equal( [OkeyTaşı(TaşRengi.Siyah, 1, false), 
+										OkeyTaşı(TaşRengi.Siyah, 4, false),
+										OkeyTaşı(TaşRengi.Mavi, 3, false), 
+										OkeyTaşı(TaşRengi.Kırmızı, 3, false)].sort().array));	
+}
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 5, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 6, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 7, false));
+	
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 3, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 5, false));
+	
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 10, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 11, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 12, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 13, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 7, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 8, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 9, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 10, false));
+	
+	auto ıstakaKopyası = ıstaka.bütünTaşlarım.dup;
+	
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 5, false));				
+	ıstaka.Başla();
+	OkeyTaşı atılacakTaş;
+	
+	auto durum = ıstaka.TaşAt(atılacakTaş);
+	assert( durum ==  Durumlar.OyunBitti );	
+	assert( atılacakTaş == OkeyTaşı(TaşRengi.Siyah, 5, false));	
+	assert( ıstaka.bütünTaşlarım.sort().equal( ıstakaKopyası.sort()) );	
+}
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 10, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 12, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 13, false));
+
+	auto ıstakaKopyası = ıstaka.bütünTaşlarım.dup;
+	ıstakaKopyası ~= OkeyTaşı(TaşRengi.Siyah, 11, false);
+	ıstaka.Başla();
+	OkeyTaşı atılacakTaş;
+	
+	auto durum = ıstaka.YerdenEkle(OkeyTaşı(TaşRengi.Siyah, 11, false));
+	assert( durum ==  Durumlar.TaşAt );	
+	assert( ıstaka.bütünTaşlarım.sort().equal( ıstakaKopyası.sort()) );	
+}
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 10, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 12, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 13, false));
+
+	auto ıstakaKopyası = ıstaka.bütünTaşlarım.dup;
+	ıstaka.Başla();
+	OkeyTaşı atılacakTaş;
+	auto durum = ıstaka.YerdenEkle(OkeyTaşı(TaşRengi.Siyah, 1, false));
+	assert( durum ==  Durumlar.TaşÇek );	
+	assert( ıstaka.bütünTaşlarım.sort().equal( ıstakaKopyası.sort()) );	
+	durum = ıstaka.OrtadanEkle(OkeyTaşı(TaşRengi.Siyah, 11, false));
+	ıstakaKopyası ~= OkeyTaşı(TaşRengi.Siyah, 11, false);
+	assert( durum ==  Durumlar.TaşAt );	
+	assert( ıstaka.bütünTaşlarım.sort().equal( ıstakaKopyası.sort()) );	
+}
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 10, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 12, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 13, false));
+
+	auto ıstakaKopyası = ıstaka.bütünTaşlarım.dup;
+	ıstakaKopyası ~= OkeyTaşı(TaşRengi.Siyah, 11, false);
+	ıstaka.Başla();
+	OkeyTaşı atılacakTaş;
+	
+	auto durum = ıstaka.YerdenEkle(OkeyTaşı(TaşRengi.Siyah, 11, false));
+	assert( durum ==  Durumlar.TaşAt );	
+	assert( ıstaka.bütünTaşlarım.sort().equal( ıstakaKopyası.sort()) );	
+}
+
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 10, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 12, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 12, false));
+
+	OkeyTaşı atılacakTaş;
+	ıstaka.TaşAt(atılacakTaş);
+	assert( atılacakTaş ==  OkeyTaşı(TaşRengi.Siyah, 12, false));	
+	assert( ıstaka.bütünTaşlarım.sort().equal([OkeyTaşı(TaşRengi.Siyah, 10, false), OkeyTaşı(TaşRengi.Siyah, 12, false)] ));	
+}
+
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 10, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 11, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 12, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 5, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 11, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 12, false));
+
+
+	
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 1, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 6, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 8, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 10, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 1, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 2, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 9, false));
+
+	
+				
+	ıstaka.Başla();
+	//writeln(ıstaka.BalyaDizgesiniDön());
+}
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 7, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 8, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 9, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 3, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 6, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 6, false));
+	
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 8, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 1, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 3, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 13, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 5, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 9, false));
+	ıstaka.Başla();
+	assert(ıstaka.YerdenEkle(OkeyTaşı(TaşRengi.Kırmızı, 10, false)) == Durumlar.TaşÇek);
+}
+
+
+unittest
+{
+	// internetten bulduğum rasgele bir dizi gerçek 15 taş 
+	Istaka ıstaka;
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 7, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 8, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 9, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 3, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 6, false));
+
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Sarı, 6, false));
+	
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 8, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 4, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Siyah, 3, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 13, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Kırmızı, 5, false));
+	ıstaka.Ekle(OkeyTaşı(TaşRengi.Mavi, 9, false));
+	ıstaka.Başla();
+	
+	OkeyTaşı[] balyaTaşları = ıstaka.balyalarım.map!( a => a.taşlar).joiner().array.sort().array;	
+	writeln(balyaTaşları); 	
+}
 
