@@ -1,6 +1,6 @@
 Yaz tatillerinin vazgeçilmez oyunu olan okeyin D dili ile yazılmış botu.
 
-Örbek bir oyun şöyle görülebilir. Aşağıdaki oyun https://www.rekoroyun.com/klasik-okey.html karşı oynanmıştır.
+Örnek bir oyun şöyle görülebilir. Aşağıdaki oyun https://www.rekoroyun.com/klasik-okey.html karşı oynanmıştır.
 
 Running ./yarismalar 
 
