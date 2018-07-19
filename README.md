@@ -3,49 +3,93 @@ Yaz tatillerinin vazgeçilmez oyunu olan okeyin D dili ile yazılmış botu.
 Örbek bir oyun şöyle görülebilir. Aşağıdaki oyun https://www.rekoroyun.com/klasik-okey.html karşı oynanmıştır.
 
 Running ./yarismalar 
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 k,6
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 m,6
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 s,6
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 k,11
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 k,12
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 k,5
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 s,5
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 s,13
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 sa,3
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 sa,7
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 m,1
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 sa,12
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 m,4
+
 14 'den daha az taşınız var lütfen taşlarınızı giriniz
+
 k,5
+
 İsterseniz Düşen taşları yazın(kendi attığınız hariç) istemezseniz enter'a basın 
+
 s,8
+
 Lütfen yerdeki taşı yazınız
+
 s,8
+
 Lütfen ortadan taş çekin ve programa yazın
+
 s,8
+
 Perleriniz: K6,M6,Sİ6
+
 Lütfen OkeyTaşı(Sarı, 3, false) yere at
+
 İsterseniz Düşen taşları yazın(kendi attığınız hariç) istemezseniz enter'a basın 
+
 k,13;s,7
+
 Lütfen yerdeki taşı yazınız
+
 m,9
+
 Lütfen ortadan taş çekin ve programa yazın
+
 k,3
+
 Perleriniz: K6,M6,Sİ6
+
 Lütfen OkeyTaşı(Sarı, 7, false) yere at
 İsterseniz Düşen taşları yazın(kendi attığınız hariç) istemezseniz enter'a basın 
 sa,1
